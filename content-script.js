@@ -46,9 +46,8 @@ function generateMarkdownFromSelection() {
       +" "+link.href+"\n- "+text);
   }else{
     var author = getPostAuthor(container.node);
-    var timenode = getPostTimeNode(container.node);
-    var link = timenode.parentNode;
-    var time = new Date(parseInt(timenode.dataset.utime,10)*1000);
+    var link = getPostUrl(container.node);
+    var time = getPostTime(container.node);
 
     var timezone = -1* (now.getTimezoneOffset()/60);
 
@@ -57,7 +56,7 @@ function generateMarkdownFromSelection() {
       "\n### "+
       time.getFullYear()+"/"+p2(time.getMonth()+1)+"/"+p2(time.getDate())+" "+
       p2(time.getHours())+":"+p2(time.getMinutes())+" GMT"+p2(timezone > 0 ? "+"+timezone :"-"+timezone)+":00"
-      +" "+link.href+"\n- "+text);
+      +" "+link+"\n- "+text);
   }
 
   return res;
@@ -87,8 +86,7 @@ function getContainedNode(node){
       }
 
       if(
-        p.classList.contains("userContentWrapper") ||
-        p.getAttribute('aria-label') === 'Story'
+        p.getAttribute('role') === 'article'
       ){
         return {type:"post",node:p};
       }
@@ -117,8 +115,7 @@ function getCommentTimeNode(commentNode) {
 //
 function getPostAuthor(postNode) {
   return (
-    postNode.querySelectorAll("[aria-owns]")[0] ||
-    postNode.querySelectorAll("[data-hovercard]")[1]
+    postNode.querySelectorAll("h5")[0]
   ).innerText;
 }
 
@@ -127,6 +124,38 @@ function getPostAuthor(postNode) {
 //
 function getPostTimeNode(postNode) {
   return postNode.querySelectorAll("[data-utime]")[0]
+}
+
+// Input: the post node that contains the selected lines
+// Output: (Date) the time
+function getPostTime(postNode) {
+  // Use the old method to get the time from timenode
+  const timeNode = getPostTimeNode(postNode);
+  if (timeNode !== undefined) {
+    return new Date(parseInt(timeNode.dataset.utime,10)*1000);
+  } else {
+    // try to get with the attribute
+    const ts = postNode.getAttribute('data-timestamp');
+    if (ts !== undefined) {
+      return new Date(parseInt(ts,10)*1000);
+    } else {
+      // otherwise return current time to avoid crash
+      return new Date();
+    }
+  }
+}
+
+// Input: the post node that contains the selected lines
+// Output: (String) the url
+function getPostUrl(postNode) {
+
+  // Use the old method to get the time from timenode
+  const timeNode = getPostTimeNode(postNode);
+  if (timeNode !== undefined) {
+    return timeNode.parentNode.url;
+  } else {
+    return postNode.querySelectorAll("[ajaxify]")[0]
+  }
 }
 
 /* ----------------- */

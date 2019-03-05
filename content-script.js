@@ -20,9 +20,10 @@ function generateMarkdownFromSelection() {
     return text < 10 ? "0"+text : text;
   }
 
+
+  var { text } =  getContentFromSelection();
+  // var text = content.substring(p.anchorOffset,p.extentOffset);
   var p = window.getSelection();
-  var content =  p.anchorNode.data.trim() || p.extentNode.data.trim() || p.anchorNode.innerText;
-  var text = content.substring(p.anchorOffset,p.extentOffset);
   var container = getContainedNode(p.anchorNode);
 
   if(!container){
@@ -86,7 +87,8 @@ function getContainedNode(node){
       }
 
       if(
-        p.getAttribute('role') === 'article'
+        //p.getAttribute('role') === 'article'
+        p.classList.contains("userContentWrapper")
       ){
         return {type:"post",node:p};
       }
@@ -148,14 +150,34 @@ function getPostTime(postNode) {
 // Input: the post node that contains the selected lines
 // Output: (String) the url
 function getPostUrl(postNode) {
+  const postId = postNode.querySelectorAll(".commentable_item")[0].querySelectorAll("[name=ft_ent_identifier]")[0].getAttribute("value");
+  return `https://www.facebook.com/${postId}`;
+}
 
-  // Use the old method to get the time from timenode
-  const timeNode = getPostTimeNode(postNode);
-  if (timeNode !== undefined) {
-    return timeNode.parentNode.url;
-  } else {
-    return postNode.querySelectorAll("[ajaxify]")[0]
-  }
+
+// Get the text from the nodes between anchorNode and focusNode with this stackoverflow piece of code
+// https://stackoverflow.com/questions/4636919/how-can-i-get-the-element-in-which-highlighted-text-is-in
+// Input: Selection
+// Output: (String) the full text content
+function getContentFromSelection() {
+    var text = "", containerElement = null;
+    if (typeof window.getSelection != "undefined") {
+        var sel = window.getSelection();
+        if (sel.rangeCount) {
+            var node = sel.getRangeAt(0).commonAncestorContainer;
+            containerElement = node.nodeType == 1 ? node : node.parentNode;
+            text = sel.toString();
+        }
+    } else if (typeof document.selection != "undefined" &&
+               document.selection.type != "Control") {
+        var textRange = document.selection.createRange();
+        containerElement = textRange.parentElement();
+        text = textRange.text;
+    }
+    return {
+        text: text,
+        container: containerElement
+    };
 }
 
 /* ----------------- */
